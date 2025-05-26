@@ -66,9 +66,14 @@ class STTConfig:
     MODEL_NAME: str = str(Path(base_path) / "yamnet.tflite")
 
     # Whisper model settings
+    # # Options: tiny, base, small, small.en, medium, large, large-v3, large-turbo-v3
+    # WHISPER_MODEL: str = "medium"  # or "small", "large", etc.
+    # WHISPER_MODEL_PATH: str = str(Path(base_path) / "ggml-small.bin")
     # Options: tiny, base, small, small.en, medium, large, large-v3, large-turbo-v3
-    WHISPER_MODEL: str = "medium"  # or "small", "large", etc.
-    WHISPER_MODEL_PATH: str = str(Path(base_path) / "ggml-small.bin")
+    WHISPER_MODEL: str = "small"  # or "small", "large", etc.
+    WHISPER_MODEL_PATH: str = str(Path(base_path) / "wisper")
+    # PACKAGE_NAME: str = "ggml-small"
+
 
     # Delay before printing transcripts (sliding window)
     PRINT_DELAY_MS: int = 5_000   # 5 seconds
@@ -154,9 +159,18 @@ class STTEngine:
         )
 
         # Whisper backend
+        # self.whisper_model = Model(
+        #     model=STTConfig.WHISPER_MODEL_PATH,
+        #     # model=STTConfig.WHISPER_MODEL,
+        #     params_sampling_strategy=0,
+        #     print_progress=False,
+        #     print_realtime=False,
+        # )
+
         self.whisper_model = Model(
-            model=STTConfig.WHISPER_MODEL_PATH,
-            # model=STTConfig.WHISPER_MODEL,
+            # model=STTConfig.WHISPER_MODEL_PATH,
+            model=STTConfig.WHISPER_MODEL,
+            models_dir=Path(STTConfig.WHISPER_MODEL_PATH),
             params_sampling_strategy=0,
             print_progress=False,
             print_realtime=False,

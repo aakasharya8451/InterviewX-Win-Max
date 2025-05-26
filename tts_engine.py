@@ -37,6 +37,9 @@ class TTSConfig:
     KOKORO_MODEL_PATH: str = "kokoro-v1.0.onnx"
     KOKORO_VOICES_PATH: str = "voices-v1.0.bin"
 
+
+    
+
     SAVE_WAV: bool = False
 
 
