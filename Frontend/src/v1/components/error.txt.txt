@@ -1,0 +1,68 @@
+        @self.app.websocket("/ws/audio_file")
+        async def audio_file(websocket: WebSocket):
+            await websocket.accept()
+            loop = asyncio.get_event_loop()
+
+            def file_worker():
+                """Stream full WAV files from queue to client."""
+                try:
+                    while True:
+                        # handle stop event: clear queue and wait
+                        if self.stop_speak_event.is_set():
+                            while not self.audio_file_queue.empty():
+                                try:
+                                    self.audio_file_queue.get_nowait()
+                                except Empty:
+                                    break
+                            self.stop_speak_event.clear()
+                            continue
+
+                        # get next filepath
+                        filepath = self.audio_file_queue.get()
+                        print(f"Processing file: {filepath}")
+                        if filepath == "__EXIT__":
+                            break
+
+                        try:
+                            # read metadata from WAV
+                            with wave.open(filepath, "rb") as wf:
+                                sample_rate = wf.getframerate()
+                                channels = wf.getnchannels()
+
+                            # read full WAV bytes
+                            with open(filepath, "rb") as f:
+                                wav_bytes = f.read()
+
+                            # send metadata for decodeAudioData()
+                            meta = {
+                                "type": "metadata",
+                                "sample_rate": sample_rate,
+                                "channels": channels
+                            }
+                            asyncio.run_coroutine_threadsafe(
+                                websocket.send_text(json.dumps(meta)),
+                                loop
+                            ).result()
+
+                            # send entire WAV file in one frame
+                            asyncio.run_coroutine_threadsafe(
+                                websocket.send_bytes(wav_bytes),
+                                loop
+                            ).result()
+
+                        except Exception as e:
+                            print(f"Error streaming file {filepath}: {e}")
+
+                except Exception as e:
+                    print(f"Streaming error: {e}")
+
+            # start file-stream worker
+            t = threading.Thread(target=file_worker, daemon=True)
+            t.start()
+
+            try:
+                # keep connection alive
+                while True:
+                    await asyncio.sleep(1)
+            except WebSocketDisconnect:
+                print("WebSocket disconnected (audio_file)")
